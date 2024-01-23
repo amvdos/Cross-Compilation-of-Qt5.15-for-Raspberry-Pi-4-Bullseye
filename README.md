@@ -224,5 +224,15 @@ sudo chmod +x sysroot-relativelinks.py
 ./sysroot-relativelinks.py sysroot
 ```
 ### __4.5 Fix EGLFS_BRCM detection__
-Before proceeding to the build configuration step, there is a last thing we need to do: strengthen the egl-brcm test to make it fail on the Raspberry Pi 4. If you wonder about the why, look at the Discussion section at the end.
+Before proceeding to the build configuration step, there is a last thing we need to do: strengthen the egl-brcm test to make it fail on the Raspberry Pi 4. If you wonder about the why, look at the Discussion section at the end.  
+First move to the location of the configure file we are interested in with:
+```
+cd qt-everywhere-src-5.15.12/qtbase/src/gui/
+```
+Now, apply the fix with the following commands:
+```
+cp configure.json tmp.json
+sed -e 's/"main": "vc_dispmanx_display_open(0);"/"main": [\n\t\t\t\t\t"vc_dispmanx_display_open(0);", \n\t\t\t\t\t"EGL_DISPMANX_WINDOW_T *eglWindow = new EGL_DISPMANX_WINDOW_T;"\n\t\t\t\t]/' tmp.json > configure.json
+rm tmp.json
+```
 
