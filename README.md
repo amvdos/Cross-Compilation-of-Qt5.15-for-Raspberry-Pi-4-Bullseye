@@ -38,7 +38,7 @@ Follow the link to grab the latest version and install it.
   - Click __SAVE__ to save the configs.
 - Click __YES__ to continue, then confirm the flash operation and wait for the process to complete.
 
-![Raspberry Pi Imager image](./raspi-imager.png)
+![Raspberry Pi Imager image](./raspi-imager_custom.png)
 
 The Imager can also download automatically the OS itself before flashing it, but I prefer the manual method, as it is faster.
 
