@@ -110,6 +110,119 @@ sudo apt-get install bluez-tools
 sudo apt-get install libbluetooth-dev
 ```
 ### __2.5 Create a directory for the Qt install__
+You need to create a directory where Qt will be deployed on the Raspberry Pi once it is built.  
+Run the following command to do so:
+```
+sudo mkdir /usr/local/qt5.15
+sudo chown -R pi:pi /usr/local/qt5.15
+```
+## __3 Configure the Host__
+The following set of instructions will be done on your host machine to configure it for the build.
+### __3.1 Update the host__
+Run the following commands to update your system and install some packages required by the build process.
+```
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install gcc git bison python gperf pkg-config gdb-multiarch
+sudo apt install build-essential
+```
 
+### __3.2 Setup SSH keys for password-less connection to the Raspberry Pi__
+To avoid providing a password everytime you connect to the Pi, you can configure your system to use SSH keys.  
+First, check if you already have an SSH key on your host by runnning:
+```
+ls ~/.ssh/ | grep id_rsa
+```
+If your output the files `id_rsa` and `id_rsa.pub` are included in the output, then there is already an SSH key on your host. In that case, you need to copy it to your Pi using:
+```
+ssh-copy-id <username>@<raspberrypi-address>
+```
+`<raspberrypi-address>` can be the IP or the local  hostname of your Pi (that you set during the flash process). In my case, it the hostname was raspi4, so I had to enter:
+```
+ssh-copy-id pi@raspi4.local
+```
+You will be asked to provide the password of the Pi user.  
+And that's it, you can now use SSH to connect to your Pi without any password.
 
+On the other hand, the `ls ~/.ssh/ | grep id_rsa` command did not give the expected output, then your host has  no existing SSH keys and you can follow the guide provided in the [Raspberry Pi documentation](https://www.raspberrypi.com/documentation/computers/remote-access.html#passwordless-ssh-access)  to setup one.
+
+### __3.3 Setup the directory structure__
+On the host computer, all the file related to the cross-compilation will be kept inside a `rpi4` directory.
+Use the following commands to create that directory and its structure:
+```
+mkdir ~/rpi4
+mkdir ~/rpi4/build
+mkdir ~/rpi4/tools
+mkdir ~/rpi4/sysroot
+mkdir ~/rpi4/sysroot/usr
+mkdir ~/rpi4/sysroot/opt
+cd ~/rpi4
+```
+The last command should change your current directory to ~/rpi4. Ensure that you are in that directory before going on with the rest of the instructions.
+
+## __4 Build preparation and Build__
+### __4.1 Download Qt sources__
+Here we download the latest available version of Qt5.15 (Qt5.15.12).  
+To download the source files, run:
+```
+wget http://download.qt.io/archive/qt/5.15/5.15.12/single/qt-everywhere-opensource-src-5.15.12.tar.xz
+```
+Extract the archive with:
+```
+tar xfv qt-everywhere-opensource-src-5.15.12.tar.xz
+```
+The mkspec within needs to be slightly modified so that we can use our cross-compiler with it. Run the following the perform the required modifications:
+```
+cp -R qt-everywhere-src-5.15.12/qtbase/mkspecs/linux-arm-gnueabi-g++ qt-everywhere-src-5.15.12/qtbase/mkspecs/linux-arm-gnueabihf-g++
+sed -i -e 's/arm-linux-gnueabi-/arm-linux-gnueabihf-/g' qt-everywhere-src-5.15.12/qtbase/mkspecs/linux-arm-gnueabihf-g++/qmake.conf
+```
+
+### __4.2 Download the cross-compiler__
+Here, we will download the cross compiler to be used for the compilation. It is the version 7.4.1 provided by Linaro. ( Yeah, I know Bullseye is currently shipped with GCC 10, but this version of the cross-compiler works fine and I didn't have the time to test any newer versions yet).  
+First change into the directory where the compiler will be located with:
+```
+cd ~/rpi4/tools
+```
+and download the compiler:
+```
+wget https://releases.linaro.org/components/toolchain/binaries/7.4-2019.02/arm-linux-gnueabihf/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf.tar.xz
+```
+Once the download finishes, extract it with :
+```
+tar xfv gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf.tar.xz
+```
+If you want to free some disk space, you can delete the tarball with:
+```
+rm gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf.tar.xz
+```
+
+Now move back to the 'rpi4' folder for the next sections:
+```
+cd ~/rpi4
+```
+
+### __4.3 Sync our sysroot__
+Cross-compilation processes (always) require a sysroot of the target device, i.e. the neccesary files to compile and run a program on that target. We will use rsync to sync the sysroot folder on the host with the folders containing the files we are interested in on the Pi.  
+
+Use the following commands to sync the sysroot (replace 'raspi4' with the hostname of your Pi, or use its IP address instead of 'raspi4.local':
+```
+rsync -avz --rsync-path="sudo rsync" --delete pi@raspi4.local:/lib sysroot
+rsync -avz --rsync-path="sudo rsync" --delete pi@raspi4.local:/usr/lib sysroot/usr
+rsync -avz --rsync-path="sudo rsync" --delete pi@raspi4.local:/usr/include sysroot/usr
+```
+The `--delete` option removes any file present in the sysroot that is not on the Pi (has been deleted). You can run those commands as much as you want to be sure that all the files have been copied.
+
+### __4.4 Fix symbolic links__
+Some of the files copied into the sysroot folder are just symbolic links pointing to other files on the Pi's filesystem; especially sysroot/lib which is a bunch of symbolic links. After the copy,we need to tell them (somehow) where the pointed files are located inside the sysroot on the host machine.
+There is a script availbale to do the work for us. Download it with:
+```
+wget https://raw.githubusercontent.com/riscv/riscv-poky/master/scripts/sysroot-relativelinks.py
+```
+Once it is download, make it executable and run it with:
+```
+sudo chmod +x sysroot-relativelinks.py
+./sysroot-relativelinks.py sysroot
+```
+### __4.5 Fix EGLFS_BRCM detection__
+Before proceeding to the build configuration step, there is a last thing we need to do: strengthen the egl-brcm test to make it fail on the Raspberry Pi 4. If you wonder about the why, look at the Discussion section at the end.
 
