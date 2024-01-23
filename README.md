@@ -231,8 +231,7 @@ cd qt-everywhere-src-5.15.12/qtbase/src/gui/
 ```
 Now, apply the fix with the following commands:
 ```
-cp configure.json tmp.json
-sed -e 's/"main": "vc_dispmanx_display_open(0);"/"main": [\n\t\t\t\t\t"vc_dispmanx_display_open(0);", \n\t\t\t\t\t"EGL_DISPMANX_WINDOW_T *eglWindow = new EGL_DISPMANX_WINDOW_T;"\n\t\t\t\t]/' tmp.json > configure.json
-rm tmp.json
+sed -i 's/"main": "vc_dispmanx_display_open(0);"/"main": [\n\t\t\t\t\t"vc_dispmanx_display_open(0);", \n\t\t\t\t\t"EGL_DISPMANX_WINDOW_T *eglWindow = new EGL_DISPMANX_WINDOW_T;"\n\t\t\t\t]/' configure.json
 ```
+
 
