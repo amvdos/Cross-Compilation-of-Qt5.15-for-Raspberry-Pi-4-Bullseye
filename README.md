@@ -322,6 +322,12 @@ Copy the built binary to the Pi using (replace raspi4 with your Pi's hostname):
 ```
 scp qopenglwidget pi@raspi4.local:~/qopenglwidgets
 ```
-
-
-
+__Switch to the Raspberry Pi__ and navigate to the home directory:
+```
+cd ~/
+```
+Now run the binary we just copied over from the host machine:
+```
+./qopenglwidget
+```
+If you have a screen connected to the Pi, the demo should start running on it. If you don't have one and you installed the Desktop version of Bullseye as in this guide, you can still see the demo running though [VNC](https://www.raspberrypi.com/documentation/computers/remote-access.html#vnc).
