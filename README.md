@@ -242,7 +242,7 @@ cd ~/rpi4/build
 ```
 Now, run the configure script with all the necessary options as follows:
 ```
-../qt-everywhere-src-5.15.12/configure -release -opengl es2  -eglfs -device linux-rasp-pi4-v3d-g++ -device-option CROSS_COMPILE=~/rpi4/tools/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -sysroot ~/rpi4/sysroot -prefix /usr/local/qt5.15 -extprefix ~/rpi4/qt5.15 -opensource -confirm-license -skip qtscript -skip qtwayland -skip qtwebengine -nomake tests -make libs -pkg-config -no-use-gold-linker -v -recheck
+../qt-everywhere-src-5.15.12/configure -release -opengl es2  -eglfs -device linux-rasp-pi4-v3d-g++ -device-option CROSS_COMPILE=~/rpi4/tools/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -sysroot ~/rpi4/sysroot -prefix /usr/local/qt5.15 -extprefix ~/rpi4/qt5.15 -opensource -confirm-license -skip qtscript -skip qtwebengine -nomake tests -make libs -pkg-config -no-use-gold-linker -v -recheck
 ```
 <u>__A quick note:__</u> If you are using this guide to cross-compile Qt for the Raspberry Pi 3,use linux-rasp-pi3-vc4-g++ instead of linux-rasp-pi4-v3d-g++.  
 The script take a few minutes, and once it is completed, it displays a summary of the configuration. It also saves this summary into a `config.summary file` if you need to check it later. The section of highest interest here is the `QPA backends` one that highlights the Qt platform plugins found by the configure script. These are the plugins used by Qt applications to render graphics elements.  
