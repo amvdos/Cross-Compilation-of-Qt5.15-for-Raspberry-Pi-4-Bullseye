@@ -234,4 +234,94 @@ Now, apply the fix with the following commands:
 sed -i 's/"main": "vc_dispmanx_display_open(0);"/"main": [\n\t\t\t\t\t"vc_dispmanx_display_open(0);", \n\t\t\t\t\t"EGL_DISPMANX_WINDOW_T *eglWindow = new EGL_DISPMANX_WINDOW_T;"\n\t\t\t\t]/' configure.json
 ```
 
+### __4.6 Configure Qt Build__
+Almost there. Here we will run the configure script that will set some things up for the build, and generate the Makefile. That script generate a whole lot of files and folders,so it is better to keep them somewhere, where they can be easily located and deleted if needed (if something go wrong and you want to start over). That's why the build directory was created some steps ago.  
+First, move to that directory:
+```
+cd ~/rpi4/build
+```
+Now, run the configure script with all the necessary options as follows:
+```
+../qt-everywhere-src-5.15.12/configure -release -opengl es2  -eglfs -device linux-rasp-pi4-v3d-g++ -device-option CROSS_COMPILE=~/rpi4/tools/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -sysroot ~/rpi4/sysroot -prefix /usr/local/qt5.15 -extprefix ~/rpi4/qt5.15 -opensource -confirm-license -skip qtscript -skip qtwayland -skip qtwebengine -nomake tests -make libs -pkg-config -no-use-gold-linker -v -recheck
+```
+<u>__A quick note:__</u> If you are using this guide to cross-compile Qt for the Raspberry Pi 3,use linux-rasp-pi3-vc4-g++ instead of linux-rasp-pi4-v3d-g++.  
+The script take a few minutes, and once it is completed, it displays a summary of the configuration. It also saves this summary into a `config.summary file` if you need to check it later. The section of highest interest here is the `QPA backends` one that highlights the Qt platform plugins found by the configure script. These are the plugins used by Qt applications to render graphics elements.  
+The `QPA backends` section should have the following outline:
+```
+QPA backends:
+  DirectFB ............................... no
+  __EGLFS .................................. yes  [SHOULD BE YES]__
+  EGLFS details:
+    EGLFS OpenWFD ........................ no
+    EGLFS i.Mx6 .......................... no
+    EGLFS i.Mx6 Wayland .................. no
+    EGLFS RCAR ........................... no
+    __EGLFS EGLDevice ...................... yes  [SHOULD BE YES]__
+    EGLFS GBM ............................ yes
+    EGLFS VSP2 ........................... no
+    EGLFS Mali ........................... no
+    __EGLFS Raspberry Pi ................... no   [SHOULD BE NO]__
+    EGLFS X11 ............................ yes
+  LinuxFB ................................ yes
+  VNC .................................... yes
+```
+If the EGLFS features of your summary are different from the ones shown above, something has probably gone wrong. You might consider having a look at the config.log file to track the issue.  
+If the `EGLFS Raspberry Pi` is `yes`, double-check that you followed the instructions at __section 4.5__, as they are intended to push this option to `no`.  
+
+If you have any issues, delete the content of the build directory before running the configure again:
+```
+rm -rf *
+```
+If everything looks good, you can proceed to build Qt in the next section.
+
+### __4.7 Build Qt__
+Inside the build directory, run:
+```
+make -j$(nproc)
+```
+That command will start the build process. The `-j$(nproc)` argument distributes the compilation job to all the threads available on the machine to speed it up. The process will take more or less time depending on your processor.  
+Upon completion, run the following to install the built packages:
+```
+make install -j$(nproc)
+```
+The build files should now be located inside ~/rpi4/qt5.15. 
+
+### __Deploy Qt to the Raspberry Pi__
+Move back to into the rpi4 folder with:
+```
+cd ~/rpi4
+```
+Now, use the following command to copy the built files to the Raspberry Pi (replace raspi4 with your Pi's hostname):
+```
+rsync -avz --rsync-path="sudo rsync" qt5.15 pi@raspi4.local:/usr/local
+```
+### __5 Update linker on the Raspberry Pi__
+On the Pi, use the following command to let its linker find newly installed Qt libraries:
+```
+echo /usr/local/qt5.15/lib | sudo tee /etc/ld.so.conf.d/qt5.15.conf
+sudo ldconfig
+```
+
+That's it. Congrats! You have successfully installed Qt5.15.12 on the Raspberry Pi 4B running Bullseye.  
+In the next step, you will build an example application to check everything works.
+
+### __6 Build an example application__
+On the PC, use the following set of commands to build one of the OpenGL example projects included in the Qt sources and deploy it to the Pi.  
+First make a copy of the example project:
+```
+cp -r ~/rpi4/qt-everywhere-src-5.15.12/qtbase/examples/opengl/qopenglwidget ~/rpi4/
+```
+Create a build directory inside the example project folder, move into it and build the project with:
+```
+mkdir ~/rpi4/qopenglwidget/build
+cd ~/rpi4/qopenglwidget/build
+../../qt5.15/bin/qmake ../
+make
+```
+Copy the built binary to the Pi using (replace raspi4 with your Pi's hostname):
+```
+scp qopenglwidget pi@raspi4.local:~/qopenglwidgets
+```
+
+
 
