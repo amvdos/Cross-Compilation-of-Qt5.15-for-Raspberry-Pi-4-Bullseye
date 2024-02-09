@@ -320,7 +320,7 @@ make
 ```
 Copy the built binary to the Pi using (replace raspi4 with your Pi's hostname):
 ```
-scp qopenglwidget pi@raspi4.local:~/qopenglwidgets
+scp qopenglwidget pi@raspi4.local:~/qopenglwidget
 ```
 __Switch to the Raspberry Pi__ and navigate to the home directory:
 ```
